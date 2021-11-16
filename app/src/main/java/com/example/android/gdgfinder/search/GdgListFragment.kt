@@ -23,7 +23,7 @@ class GdgListFragment : Fragment() {
 
 
     private val viewModel: GdgListViewModel by lazy {
-        ViewModelProvider(this)[GdgListViewModel::class.java]
+        ViewModelProvider(this).get(GdgListViewModel::class.java)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -31,7 +31,7 @@ class GdgListFragment : Fragment() {
         val binding = FragmentGdgListBinding.inflate(inflater)
 
         // Allows Data Binding to Observe LiveData with the lifecycle of this Fragment
-        binding.lifecycleOwner = this
+        binding.setLifecycleOwner(this)
 
         // Giving the binding access to the OverviewViewModel
         binding.viewModel = viewModel
@@ -44,7 +44,9 @@ class GdgListFragment : Fragment() {
         // Sets the adapter of the RecyclerView
         binding.gdgChapterList.adapter = adapter
 
-        viewModel.showNeedLocation.observe(viewLifecycleOwner, { show -> // Snackbar is like Toast but it lets us show forever
+        viewModel.showNeedLocation.observe(viewLifecycleOwner, object: Observer<Boolean> {
+            override fun onChanged(show: Boolean?) {
+                // Snackbar is like Toast but it lets us show forever
                 if (show == true) {
                     Snackbar.make(
                         binding.root,
@@ -52,7 +54,8 @@ class GdgListFragment : Fragment() {
                         Snackbar.LENGTH_LONG
                     ).show()
                 }
-            })
+            }
+        })
 
         setHasOptionsMenu(true)
         return binding.root
@@ -105,7 +108,13 @@ class GdgListFragment : Fragment() {
         }
 
 
-        val request = LocationRequest().setPriority(LocationRequest.PRIORITY_LOW_POWER)
+        val request = LocationRequest.create().apply {
+            interval = 100
+            fastestInterval = 50
+            priority = LocationRequest.PRIORITY_LOW_POWER
+            maxWaitTime= 100
+        }
+
         val callback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 val location = locationResult?.lastLocation ?: return
@@ -131,5 +140,3 @@ class GdgListFragment : Fragment() {
         }
     }
 }
-
-
